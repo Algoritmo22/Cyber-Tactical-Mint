@@ -1,26 +1,17 @@
-# 🛡️ Cyber Tactical Mint
+# Cyber Tactical Mint
 
-Cyber Tactical Mint es un proyecto Open Source que transforma Linux Mint Cinnamon en una estación de trabajo táctica con una estética militar futurista.
+Una personalización completa de Linux Mint 22.3 Cinnamon con estética táctica militar.
 
 ## Características
 
-- 🎨 Tema Green Tactical
-- 🖥️ Configuración de Cinnamon
-- 💻 Terminal Kitty personalizada
-- 📊 Dashboard Conky
-- 📈 btop con tema militar
-- 🛰️ Fastfetch personalizado
-- 🚀 Instalador automático
-- 🔄 Actualizador
-- 🧹 Desinstalador
-
-## Estado
-
-🚧 En desarrollo
-
-Versión actual:
-
-v0.1.0
+- Tema Green Tactical
+- Kitty
+- Conky
+- btop
+- Fastfetch
+- Picom
+- Plank
+- Instalación automática
 
 ## Instalación
 
@@ -29,7 +20,3 @@ git clone https://github.com/Algoritmo22/Cyber-Tactical-Mint.git
 cd Cyber-Tactical-Mint
 ./scripts/install.sh
 ```
-
-## Licencia
-
-MIT License

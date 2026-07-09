@@ -2,53 +2,56 @@
 
 set -e
 
+GREEN="\033[1;32m"
+BLUE="\033[1;34m"
+RED="\033[1;31m"
+NC="\033[0m"
+
 clear
 
-echo "======================================================================"
-echo "    ______     __               ______actical                         "
-echo "   / ____/_  _/ /_  ___  _____ /_  __/___  _____                      "
-echo "  / /   / / / / __ \/ _ \/ ___/  / / / __ \/ ___/                      "
-echo " / /___/ /_/ / /_/ /  __/ /     / / / /_/ / /__                        "
-echo " \____/\__, /_.___/\___/_/     /_/  \____/\___/   v1.0                "
-echo "      /____/                                                           "
-echo "      EDICIÓN OPERATIVA MILITAR - LINUX MINT                           "
-echo "======================================================================"
+echo -e "${GREEN}"
+echo "=============================================="
+echo "        CYBER TACTICAL MINT v0.1"
+echo "=============================================="
+echo -e "${NC}"
 
-echo "Versión: 0.1.0"
-echo
+echo -e "${BLUE}[1/6] Comprobando sistema...${NC}"
 
-echo "[1/5] Verificando conexión..."
+if ! grep -q "Linux Mint" /etc/os-release; then
+    echo -e "${RED}Este instalador solo funciona en Linux Mint.${NC}"
+    exit 1
+fi
 
-ping -c 1 github.com >/dev/null
+echo -e "${GREEN}Sistema compatible.${NC}"
 
-echo "✔ Conexión correcta"
-
-echo
-echo "[2/5] Actualizando paquetes..."
-
+echo -e "${BLUE}[2/6] Actualizando paquetes...${NC}"
 sudo apt update
 
-echo
-echo "[3/5] Instalando dependencias..."
+echo -e "${BLUE}[3/6] Instalando programas...${NC}"
 
 sudo apt install -y \
+kitty \
+btop \
+fastfetch \
+conky-all \
+plank \
+picom \
 git \
 curl \
 wget \
-kitty \
-btop \
-conky-all \
-fastfetch \
-plank \
-picom
+unzip
+
+echo -e "${BLUE}[4/6] Creando carpetas...${NC}"
+
+mkdir -p ~/.config/{kitty,btop,fastfetch,conky}
+
+echo -e "${BLUE}[5/6] Preparando Cyber Tactical Mint...${NC}"
+
+sleep 2
+
+echo -e "${BLUE}[6/6] Finalizando...${NC}"
 
 echo
-echo "[4/5] Preparando configuración..."
-
-mkdir -p ~/.config
-
+echo -e "${GREEN}✔ Instalación completada correctamente.${NC}"
 echo
-echo "[5/5] Finalizado"
-
-echo
-echo "Cyber Tactical Mint instalado correctamente."
+echo "La configuración personalizada se instalará en la siguiente versión."

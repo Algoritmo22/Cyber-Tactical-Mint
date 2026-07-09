@@ -1,0 +1,6 @@
+*.log
+*.tmp
+*.cache
+*.bak
+*.swp
+.vscode/

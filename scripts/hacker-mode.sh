@@ -1,37 +1,57 @@
 #!/bin/bash
 
 # ==============================================================================
-# PROYECTO: Cyber-Tactical-Mint (Modo Hacker - Edición Barra de Estado)
-# DESCRIPCIÓN: Consola unificada con la estética nativa de tu panel de sistema
+# PROYECTO: Cyber-Tactical-Mint (Modo Hacker - Ventanas Distribuidas)
+# DESCRIPCIÓN: Abre terminales en tamaños y posiciones exactas para evitar amontonamiento
 # ==============================================================================
 
-SESION="HackerHUD"
+# --- PARÁMETROS ESTÉTICOS DE TU BARRA DE ESTADO ---
+OPACIDAD="0.85"
+COLOR_FONDO="#1e1e2e"
+COLOR_TEXTO="#cdd6f4"
+TAMANO_LETRA="13.0"
 
-# 1. Iniciar sesión de tmux en segundo plano
-tmux new-session -d -s $SESION
+echo "[*] Desplegando ventanas tácticas organizadas..."
 
-# --- CONFIGURACIÓN DE CONCORDANCIA CON LA BARRA DE ESTADO ---
-# Eliminar las molestas líneas verdes y hacer los bordes totalmente invisibles
-tmux set-option -g pane-border-style fg=default
-tmux set-option -g pane-active-border-style fg=default
-tmux set-option -g status off
-
-# 2. Ventana Superior: Lanzar btop táctico ampliado
-tmux send-keys -t $SESION "btop" C-m
-
-# 3. Dividir horizontalmente (Crear espacio inferior amplio)
-tmux split-window -v -t $SESION
-
-# 4. Ventana Inferior: Información del sistema y terminal libre limpia
-tmux send-keys -t $SESION "clear && fastfetch" C-m
-
-# 5. Forzar la terminal Kitty a replicar los atributos de tu panel de escritorio
-# - Opacidad equilibrada, fuentes amplias tamaño 13.5 y colores de interfaz Mint
+# 1. Ventana Grande (Izquierda): Monitor de Procesos btop
+# --remember-window-size=no permite forzar el tamaño personalizado
 kitty \
-  -o background_opacity=0.88 \
-  -o font_size=13.5 \
-  -o window_padding_width=20 \
-  -o hide_window_decorations=yes \
-  -o foreground=#c5c6c7 \
-  -o background=#1f2326 \
-  -e tmux attach-session -t $SESION
+  -o background_opacity=$OPACIDAD \
+  -o font_size=$TAMANO_LETRA \
+  -o background=$COLOR_FONDO \
+  -o foreground=$COLOR_TEXTO \
+  --remember-window-size=no \
+  --initial-window-width=1000 \
+  --initial-window-height=950 \
+  --title "🛰️ TELEMETRÍA DE PROCESOS" \
+  -e btop &
+
+sleep 0.4
+
+# 2. Ventana Superior Derecha: Estado del Sistema (Fastfetch)
+# Colocada al lado de la ventana de btop
+kitty \
+  -o background_opacity=$OPACIDAD \
+  -o font_size=$TAMANO_LETRA \
+  -o background=$COLOR_FONDO \
+  -o foreground=$COLOR_TEXTO \
+  --remember-window-size=no \
+  --initial-window-width=850 \
+  --initial-window-height=450 \
+  --title "💻 ESTADO DEL SISTEMA" \
+  -e sh -c "fastfetch; exec bash" &
+
+sleep 0.4
+
+# 3. Ventana Inferior Derecha: Consola Libre Táctica
+# Colocada debajo de la ventana de Fastfetch
+kitty \
+  -o background_opacity=$OPACIDAD \
+  -o font_size=$TAMANO_LETRA \
+  -o background=$COLOR_FONDO \
+  -o foreground=$COLOR_TEXTO \
+  --remember-window-size=no \
+  --initial-window-width=850 \
+  --initial-window-height=460 \
+  --title "⚡ CONSOLA TÁCTICA LIBRE" \
+  -e bash &

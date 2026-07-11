@@ -1,14 +1,17 @@
-# Configuración de 4 terminales en cuadrícula para Pentesting
-layout grid
+# Configuración avanzada de 5 terminales para Pentesting Activo
+layout splits
 
-# Terminal 1: Monitoreo
-launch sh -c "echo '🛰️  1. MONITOREO DE REDES Y LOGS (wlp4s2)'; exec bash"
+# 1. Ventana Principal Gigante (Ocupa todo el lado izquierdo)
+launch sh -c "echo '🛰️  1. INTERCEPTOR Y MONITOREO DE REDES (tcpdump)'; exec bash"
 
-# Terminal 2: Ataque
-launch sh -c "echo '⚡ 2. CONSOLA DE ATAQUES / METASPLOIT'; exec bash"
+# 2. Moverse a la derecha y crear la parte superior
+launch --location=vsplit sh -c "echo '⚡ 2. CONSOLA DE ATAQUES / METASPLOIT'; exec bash"
 
-# Terminal 3: Scripts
-launch sh -c "echo '🔍 3. RECONOCIMIENTO / NMAP'; exec bash"
+# 3. Dividir el cuadrante derecho para crear el tercero
+launch --location=hsplit sh -c "echo '🔍 3. ESCANEO Y RECONOCIMIENTO (nmap)'; exec bash"
 
-# Terminal 4: Consola Libre
-launch sh -c "echo '🛡️  4. CRACKING Y WEB PENTESTING'; exec bash"
+# 4. Dividir de nuevo para crear la cuarta ventana
+launch --location=hsplit sh -c "echo '📂 4. ENTORNO DE SCRIPTS Y UTILS'; exec bash"
+
+# 5. Quinta ventana: Consola Libre Táctica en el bloque inferior
+launch --location=hsplit sh -c "echo '🛡️  5. CONSOLA LIBRE DE SOPORTE'; exec bash"

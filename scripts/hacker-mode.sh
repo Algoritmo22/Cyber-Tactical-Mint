@@ -1,20 +1,18 @@
 #!/bin/bash
 
 # ==============================================================================
-# PROYECTO: Cyber-Tactical-Mint (Consola Cuádruple Integrada)
-# DESCRIPCIÓN: Una sola ventana gigante de Kitty con 4 terminales nativas en cuadrícula
+# PROYECTO: Cyber-Tactical-Mint (Consola Cuádruple con Sesión)
+# DESCRIPCIÓN: Carga una cuadrícula perfecta de 4 terminales sin errores de parsing
 # ==============================================================================
 
-# --- PARÁMETROS QUE EMULAN TU PANEL DE LINUX MINT ---
 OPACIDAD="0.85"
 COLOR_FONDO="#1e1e2e"
 COLOR_TEXTO="#cdd6f4"
 TAMANO_LETRA="13.0"
 
-echo "[*] Desplegando contenedor unificado de 4 terminales para pentesting..."
+echo "[*] Cargando entorno de pentesting unificado desde archivo de sesión..."
 
-# Lanzamos una sola ventana gigante de Kitty.
-# El truco está en "enabled_layouts grid", que fuerza a las subventanas a ordenarse en 4 esquinas.
+# Ejecutamos Kitty apuntando a nuestra sesión nativa eliminando las opciones problemáticas
 kitty \
   -o remember_window_size=no \
   -o initial_window_width=1850 \
@@ -27,11 +25,4 @@ kitty \
   -o window_padding_width=15 \
   -o active_border_color=none \
   -o inactive_border_color=none \
-  -o enabled_layouts=grid \
-  sh -c "
-    kitty @ launch --location=after --copy-env sh -c 'echo \"🛰️  1. MONITOREO DE REDES Y LOGS\n---------------------------------\"; exec bash';
-    kitty @ launch --location=after --copy-env sh -c 'echo \"⚡ 2. CONSOLA DE ATAQUES / NMAP\n---------------------------------\"; exec bash';
-    kitty @ launch --location=after --copy-env sh -c 'echo \"📂 3. SCRIPTS DE PYTHON / UTILS\n---------------------------------\"; exec bash';
-    kitty @ launch --location=after --copy-env sh -c 'echo \"🛡️  4. CONSOLA TÁCTICA LIBRE\n---------------------------------\"; exec bash';
-    kitty @ close-window --match=id:0
-  " &
+  --session "/home/luis18/Cyber-Tactical-Mint/configs/kitty/hacker.session" &

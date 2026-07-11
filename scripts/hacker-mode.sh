@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # ==============================================================================
-# PROYECTO: Cyber-Tactical-Mint (Consolas de Pentesting Limpias V2)
-# DESCRIPCIÓN: Lanza terminales translúcidas independientes y elimina sus marcos
+# PROYECTO: Cyber-Tactical-Mint (Consola Cuádruple Integrada)
+# DESCRIPCIÓN: Una sola ventana gigante de Kitty con 4 terminales nativas en cuadrícula
 # ==============================================================================
 
 # --- PARÁMETROS QUE EMULAN TU PANEL DE LINUX MINT ---
@@ -11,38 +11,27 @@ COLOR_FONDO="#1e1e2e"
 COLOR_TEXTO="#cdd6f4"
 TAMANO_LETRA="13.0"
 
-echo "[*] Inicializando laboratorio de pentesting..."
+echo "[*] Desplegando contenedor unificado de 4 terminales para pentesting..."
 
-# Función reutilizable para abrir cada terminal limpia
-abrir_terminal_tactica() {
-    local titulo="$1"
-    local texto_inicial="$2"
-    
-    kitty \
-      -o remember_window_size=no \
-      -o initial_window_width=850 \
-      -o initial_window_height=450 \
-      -o background_opacity=$OPACIDAD \
-      -o background=$COLOR_FONDO \
-      -o foreground=$COLOR_TEXTO \
-      -o font_size=$TAMANO_LETRA \
-      -o hide_window_decorations=yes \
-      -o window_padding_width=20 \
-      --title "$titulo" \
-      -e sh -c "echo '$texto_inicial'; exec bash" &
-}
-
-# 1. Abrir Terminal de Monitoreo
-abrir_terminal_tactica "🛰️ MONITOREO DE REDES" "🛰️  MONITOREO DE REDES Y LOGS ACTIVO (wlp4s2)\n--------------------------------------------------"
-
-sleep 0.3
-
-# 2. Abrir Terminal de Ataque
-abrir_terminal_tactica "⚡ CONSOLA DE AUDITORÍAS" "⚡ CONSOLA DE AUDITORÍAS / ATAQUE\n--------------------------------------------------"
-
-sleep 0.3
-
-# 3. Abrir Tercera Terminal de Soporte
-abrir_terminal_tactica "📂 HERRAMIENTAS" "📂 HERRAMIENTAS ADICIONALES Y GESTIÓN\n--------------------------------------------------"
-
-echo "[✔] Suite táctica desplegada con éxito."
+# Lanzamos una sola ventana gigante de Kitty.
+# El truco está en "enabled_layouts grid", que fuerza a las subventanas a ordenarse en 4 esquinas.
+kitty \
+  -o remember_window_size=no \
+  -o initial_window_width=1850 \
+  -o initial_window_height=980 \
+  -o background_opacity=$OPACIDAD \
+  -o background=$COLOR_FONDO \
+  -o foreground=$COLOR_TEXTO \
+  -o font_size=$TAMANO_LETRA \
+  -o hide_window_decorations=yes \
+  -o window_padding_width=15 \
+  -o active_border_color=none \
+  -o inactive_border_color=none \
+  -o enabled_layouts=grid \
+  sh -c "
+    kitty @ launch --location=after --copy-env sh -c 'echo \"🛰️  1. MONITOREO DE REDES Y LOGS\n---------------------------------\"; exec bash';
+    kitty @ launch --location=after --copy-env sh -c 'echo \"⚡ 2. CONSOLA DE ATAQUES / NMAP\n---------------------------------\"; exec bash';
+    kitty @ launch --location=after --copy-env sh -c 'echo \"📂 3. SCRIPTS DE PYTHON / UTILS\n---------------------------------\"; exec bash';
+    kitty @ launch --location=after --copy-env sh -c 'echo \"🛡️  4. CONSOLA TÁCTICA LIBRE\n---------------------------------\"; exec bash';
+    kitty @ close-window --match=id:0
+  " &

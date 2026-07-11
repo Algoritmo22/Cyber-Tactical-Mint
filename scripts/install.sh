@@ -60,8 +60,43 @@ read -p "Introduce el número de tu opción [1-4]: " OPCION
 
 # --- FUNCIONES DE INSTALACIÓN ---
 instalar_base() {
-    echo -e "\n${NEON_CYAN}[*] Actualizando repositorios del sistema e instalando dependencias comunes...${RESET}"
-    apt update && apt install -y git wget curl unzip lm-sensors
+    echo -e "\n${NEON_CYAN}[*] Actualizando repositorios e instalando Arsenal de Pentesting...${RESET}"
+    apt update
+    
+    # 1. Dependencias base del sistema
+    apt install -y git wget curl unzip lm-sensors build-essential
+    
+    # 2. Herramientas de Pentesting, Auditoría de Redes y Explotación
+    echo -e "${NEON_VERDE}    -> Desplegando herramientas de Redes, Cracking y Web...${RESET}"
+    apt install -y \
+        nmap \
+        tcpdump \
+        wireshark-cli \
+        nload \
+        net-tools \
+        macchanger \
+        john \
+        hashcat \
+        hydra \
+        aircrack-ng \
+        crunch \
+        sqlmap \
+        nikto \
+        gobuster \
+        dirb \
+        subfinder \
+        whois \
+        dnsutils
+
+    # 3. Instalación automatizada opcional del Framework Metasploit si no existe
+    if ! command -v msfconsole &> /dev/null; then
+        echo -e "${NEON_CYAN}    -> Descargando e instalando Metasploit Framework de forma segura...${RESET}"
+        curl https://githubusercontent.com | qbus -s /bin/bash
+    fi
+
+    # Configurar permisos para capturas de red sin sudo para el usuario luis18
+    sudo usermod -aG wireshark luis18 2>/dev/null
+    sudo chmod +x /usr/bin/dumpcap 2>/dev/null
 }
 
 instalar_terminal_suite() {

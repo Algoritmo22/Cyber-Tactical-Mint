@@ -68,15 +68,25 @@ instalar_terminal_suite() {
     echo -e "\n${NEON_VERDE}[+] Desplegando Suite de Terminal...${RESET}"
     apt install -y kitty btop fastfetch
 
-    # [NUEVO] Copiar configuración de Kitty al usuario real
     REAL_USER=${SUDO_USER:-$USER}
     USER_HOME=$(eval echo ~$REAL_USER)
-    mkdir -p "$USER_HOME/.config/kitty"
     
+    # Configuración de Kitty
+    mkdir -p "$USER_HOME/.config/kitty"
     if [ -f "../configs/kitty/kitty.conf" ]; then
         cp "../configs/kitty/kitty.conf" "$USER_HOME/.config/kitty/"
         chown -R "$REAL_USER":"$REAL_USER" "$USER_HOME/.config/kitty"
-        echo -e "${NEON_VERDE}    -> Configuración táctica de Kitty copiada con éxito.${RESET}"
+    fi
+
+    # [NUEVO] Configuración del tema de btop
+    mkdir -p "$USER_HOME/.config/btop/themes"
+    if [ -f "../configs/btop/cyber-tactical.theme" ]; then
+        cp "../configs/btop/cyber-tactical.theme" "$USER_HOME/.config/btop/themes/"
+        # Forzar a btop a usar nuestro tema modificando su config si existe
+        mkdir -p "$USER_HOME/.config/btop"
+        echo 'color_theme="cyber-tactical.theme"' > "$USER_HOME/.config/btop/btop.conf"
+        chown -R "$REAL_USER":"$REAL_USER" "$USER_HOME/.config/btop"
+        echo -e "${NEON_VERDE}    -> Tema táctico aplicado correctamente a btop.${RESET}"
     fi
 }
 

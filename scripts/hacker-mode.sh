@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # ==============================================================================
-# PROYECTO: Cyber-Tactical-Mint (Consola Cuádruple - Solución de Color)
-# DESCRIPCIÓN: Cuadrícula de 4 terminales sin errores de parsing ni color
+# PROYECTO: Cyber-Tactical-Mint (Consola Cuádruple con Bordes)
+# DESCRIPCIÓN: Abre la cuadrícula sin fallos e incluye líneas divisorias
 # ==============================================================================
 
 # --- PARÁMETROS QUE EMULAN TU PANEL DE LINUX MINT ---
@@ -11,10 +11,10 @@ COLOR_FONDO="#1e1e2e"
 COLOR_TEXTO="#cdd6f4"
 TAMANO_LETRA="13.0"
 
-echo "[*] Desplegando suite táctica con bordes invisibles calibrados..."
+echo "[*] Inicializando laboratorio con cuadrícula y líneas divisorias..."
 
-# Cambiamos "none" por el código $COLOR_FONDO para que las líneas divisorias
-# se pinten del mismo color del fondo y se vuelvan totalmente invisibles.
+# Cambiamos active_border_color por un tono cyan para que las líneas divisorias
+# se dibujen claramente entre tus 4 esquinas de terminal.
 kitty \
   -o remember_window_size=no \
   -o initial_window_width=1850 \
@@ -25,6 +25,8 @@ kitty \
   -o font_size=$TAMANO_LETRA \
   -o hide_window_decorations=yes \
   -o window_padding_width=15 \
-  -o active_border_color=$COLOR_FONDO \
-  -o inactive_border_color=$COLOR_FONDO \
+  -o window_border_width=2 \
+  -o draw_minimal_borders=yes \
+  -o active_border_color=#00ffff \
+  -o inactive_border_color=#49514c \
   --session "/home/luis18/Cyber-Tactical-Mint/configs/kitty/hacker.session" &

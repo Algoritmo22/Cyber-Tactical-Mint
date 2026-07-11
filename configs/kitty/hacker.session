@@ -1,18 +1,14 @@
-# Configuración de 5 Terminales Unidas en una Sola Ventana
-layout splits
+# Diseño de 4 terminales en cuadrícula para Pentesting Activo
+layout grid
 
-# 1. Crear el Panel Izquierdo Completo (Monitoreo)
-launch sh -c "echo '🛰️  1. MONITOREO DE REDES Y LOGS'; echo '-> Comando: sudo tcpdump -i wlp4s2 -XX'; exec bash"
+# Terminal 1: Captura de Tráfico en vivo (wlp4s2)
+launch sh -c "echo '🛰️  1. INTERCEPTOR DE NETWORK VIVO (tcpdump)'; echo '-> Comando: sudo tcpdump -i wlp4s2 -XX'; exec bash"
 
-# 2. Dividir verticalmente para crear el lado derecho
-launch --location=vsplit sh -c "echo '⚡ 2. METASPLOIT FRAMEWORK INTERACTIVO'; echo '-> Comando: msfconsole'; exec bash"
+# Terminal 2: Framework de Explotación de Vulnerabilidades
+launch sh -c "echo '⚡ 2. METASPLOIT FRAMEWORK INTERACTIVO'; echo '-> Comando: msfconsole'; exec bash"
 
-# 3. Dividir horizontalmente abajo a la derecha
-launch --location=hsplit sh -c "echo '🔍 3. RECONOCIMIENTO ACTIVO DE REDES'; echo '-> Ejemplo: nmap -sV -O 192.168.1.1'; exec bash"
+# Terminal 3: Suite de Escaneo de Redes y Puertos
+launch sh -c "echo '🔍 3. RECONOCIMIENTO ACTIVO DE REDES'; echo '-> Ejemplo: nmap -sV -O 192.168.1.1'; exec bash"
 
-# 4. Mover el foco e insertar el cuarto panel
-launch --location=hsplit sh -c "echo '🛡️  4. CONSOLA TÁCTICA LIBRE'; exec bash"
-
-# 5. INTEGRACIÓN DE LA QUINTA PANTALLA CENTRAL (Cracking)
-# Coloca el panel exactamente en medio de las divisiones de la ventana principal
-launch --location=vsplit sh -c "echo '☠️  5. CENTRAL DE AUDITORÍA INALÁMBRICA & CRACKING'; echo '-> Herramientas: aircrack-ng, john, hashcat'; exec bash"
+# Terminal 4: Consola Libre para Cracking y Herramientas Web
+launch sh -c "echo '🛡️  4. CRACKING Y WEB PENTESTING DISPONIBLE'; exec bash"

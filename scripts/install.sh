@@ -109,26 +109,22 @@ instalar_desktop_suite() {
 # ==============================================================================
 # [BLOQUE C] DESPLIEGUE DE CONFIGURACIONES, FUENTES E INICIO AUTOMÁTICO
 # ==============================================================================
-desplegar_recursos_usuario() {
-    REAL_USER=${SUDO_USER:-$USER}
-    USER_HOME=$(eval echo ~$REAL_USER)
+    # [NUEVO] Configurar e instalar el Fondo de Pantalla Táctico del celular
+    mkdir -p "$USER_HOME/Imágenes/Wallpapers"
+    
+    # Apuntamos a la carpeta wallpapers de la raíz del proyecto (un nivel arriba de scripts)
+    WALLPAPER_FILE=$(ls ../wallpapers/cyber-wallpaper.* 2>/dev/null | head -n 1)
 
-    echo -e "\n${NEON_CYAN}[*] Desplegando archivos de configuración para el usuario: $REAL_USER...${RESET}"
-
-    mkdir -p "$USER_HOME/.config/conky"
-    mkdir -p "$USER_HOME/.config/autostart"
-    mkdir -p "$USER_HOME/.local/share/fonts"
-
-    if [ -f "../configs/conky/cyberpunk-conky.conf" ]; then
-        cp "../configs/conky/cyberpunk-conky.conf" "$USER_HOME/.config/conky/"
-        echo -e "${NEON_VERDE}    -> Configuración de Conky copiada correctamente.${RESET}"
+    if [ -f "$WALLPAPER_FILE" ]; then
+        EXTENSION="${WALLPAPER_FILE##*.}"
+        cp "$WALLPAPER_FILE" "$USER_HOME/Imágenes/Wallpapers/cyber-tactical.$EXTENSION"
+        chown "$REAL_USER":"$REAL_USER" "$USER_HOME/Imágenes/Wallpapers/cyber-tactical.$EXTENSION"
+        
+        # Comando específico para cambiar el fondo en Linux Mint Cinnamon en caliente
+        sudo -u "$REAL_USER" gsettings set org.cinnamon.desktop.background picture-uri "file://$USER_HOME/Imágenes/Wallpapers/cyber-tactical.$EXTENSION"
+        echo -e "${NEON_VERDE}    -> Fondo de pantalla del celular establecido con éxito.${RESET}"
     fi
 
-    if [ -d "../configs/fonts" ] && [ "$(ls -A ../configs/fonts)" ]; then
-        cp ../configs/fonts/*.{ttf,otf} "$USER_HOME/.local/share/fonts/" 2>/dev/null
-        sudo -u "$REAL_USER" fc-cache -fv > /dev/null
-        echo -e "${NEON_VERDE}    -> Fuentes tácticas instaladas en el sistema.${RESET}"
-    fi
 
     # Crear lanzadores de inicio automático (.desktop)
     cat <<EOF > "$USER_HOME/.config/autostart/conky-tactical.desktop"

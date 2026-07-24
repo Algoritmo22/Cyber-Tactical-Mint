@@ -1,4 +1,4 @@
-# Configuración Avanzada de 5 Terminales Unidas en una Sola Ventana
+# Configuración avanzada de 5 terminales integradas para Pentesting Activo
 layout splits
 
 # Panel 1: Esquina Superior Izquierda (Monitoreo)
@@ -7,25 +7,11 @@ launch sh -c "echo '🛰️  1. INTERCEPTOR DE REDES (tcpdump)'; exec bash"
 # Panel 2: Esquina Inferior Izquierda (Herramientas Adicionales)
 launch --location=hsplit sh -c "echo '📂 3. SCRIPTS DE PYTHON / UTILS'; exec bash"
 
-# Panel 3: LA CENTRAL EN EL CENTRO EXACTO (Cracking Inalámbrico con Máscara en Rombo)
-# Se posiciona en medio uniendo las 4 esquinas
-launch --location=vsplit sh -c "
-  clear;
-  echo '         /\         ';
-  echo '        /  \        ☠️  5. CENTRAL DE AUDITORÍA INALÁMBRICA';
-  echo '       / ☠️  \       -------------------------------------';
-  echo '      / CRACK \     Herramientas: aircrack-ng / hcxtools ';
-  echo '     /  WIFI   \    -------------------------------------';
-  echo '     \  MODE   /    Escaneando Handshakes en vivo...     ';
-  echo '      \       /     ';
-  echo '       \     /      ';
-  echo '        \   /       ';
-  echo '         \/         ';
-  exec bash
-"
+# Panel 3: LA CENTRAL EN EL CENTRO EXACTO (Cracking Inalámbrico en Rombo)
+launch --location=vsplit sh -c "printf '         /\\\         \n        /  \\\        ☠️  5. CENTRAL DE AUDITORÍA\n       / ☠️  \\\       -------------------------------------\n      / CRACK \\\     Herramientas: aircrack-ng / hcxtools \n     /  WIFI   \\\    -------------------------------------\n     \\\  MODE   /    Escaneando Handshakes en vivo...     \n      \\\       /     \n       \\\     /      \n        \\\   /       \n         \\\/         \n'; exec bash"
 
-# Panel 4: Esquina Superior Derecha (Ataque y Explotación)
-launch --location=vsplit sh -c "echo '⚡ 2. CONSOLA DE ATAQUES / METASPLOIT'; exec bash"
+# Panel 4: Levanta el servidor local de Ollama e inicia la IA Dolphin de inmediato
+launch sh -c "echo '🤖 4. INICIALIZANDO INTELIGENCIA ARTIFICIAL LOCAL...'; ollama serve & sleep 2 && ollama run dolphin-llama3"
 
 # Panel 5: Esquina Inferior Derecha (Reconocimiento)
 launch --location=hsplit sh -c "echo '🔍 4. RECONOCIMIENTO ACTIVO (nmap)'; exec bash"

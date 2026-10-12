@@ -88,10 +88,12 @@ instalar_base() {
         whois \
         dnsutils
 
-    # 3. Instalación automatizada opcional del Framework Metasploit si no existe
+    # 3. Metasploit no se instala automáticamente.
+    # El comando anterior usaba una URL y una tubería incorrectas.
+    # Si necesitas Metasploit, sigue exclusivamente la documentación oficial:
+    # https://docs.metasploit.com/
     if ! command -v msfconsole &> /dev/null; then
-        echo -e "${NEON_CYAN}    -> Descargando e instalando Metasploit Framework de forma segura...${RESET}"
-        curl https://githubusercontent.com | qbus -s /bin/bash
+        echo -e "${NEON_AMARILLO}    -> Metasploit omitido: instalación manual desde documentación oficial.${RESET}"
     fi
 
     # Configurar permisos para capturas de red sin sudo para el usuario luis18

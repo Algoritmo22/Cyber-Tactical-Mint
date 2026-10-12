@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Cyber-Tactical Security Center
+Comment=Centro modular de diagnóstico y defensa
+Exec=sh -lc 'bash "$HOME/Cyber-Tactical-Mint/scripts/security-center.sh"'
+Icon=utilities-terminal
+Terminal=true
+Categories=System;Security;Utility;

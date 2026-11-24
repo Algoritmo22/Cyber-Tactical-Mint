@@ -1,241 +1,343 @@
-#!/bin/bash
+#!/usr/bin/env bash
+# ─────────────────────────────────────────────────────────────────────────────
+#  Cyber-Tactical-Mint · instalador
+#  Entorno táctico para Linux Mint (Cinnamon): Conky, Kitty, Btop, Fastfetch,
+#  Plank y fondos de pantalla, todo generado desde una sola paleta de colores.
+#
+#  Uso:  ./scripts/install.sh [opciones]      (NO lo ejecutes con sudo)
+# ─────────────────────────────────────────────────────────────────────────────
+# shellcheck disable=SC2154  # las variables P_* vienen de palettes/*.sh
+set -Eeuo pipefail
 
-# ==============================================================================
-# PROYECTO: Cyber-Tactical-Mint (Instalador Inteligente V2)
-# DESCRIPCIÓN: Automatización modular para entorno táctico en Linux Mint
-# ==============================================================================
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# shellcheck source=lib/common.sh
+source "$ROOT_DIR/scripts/lib/common.sh"
+VERSION="$(<"$ROOT_DIR/VERSION")"
 
-# --- COLORES PARA LA TERMINAL ---
-NEON_VERDE="\e[1;32m"
-NEON_CYAN="\e[1;36m"
-NEON_ROJO="\e[1;31m"
-NEON_AMARILLO="\e[1;33m"
-RESET="\e[0m"
+THEME="cyber"
+SKIP_DEPS=0
+SKIP_FONTS=0
+SKIP_WALLPAPER=0
+NO_LAUNCH=0
+WITH_EXTRAS=0
+WITH_STARSHIP=0
+WITH_SYSTEM_THEME=0
+FORCE=0
 
-# --- LOGO ---
-clear
-echo -e "${NEON_CYAN}"
-echo "  ██████╗██╗   ██╗██████╗ ███████╗██████╗ "
-echo " ██╔════╝╚██╗ ██╔╝██╔══██╗██╔════╝██╔══██╗"
-echo " ██║      ╚████╔╝ ██████╔╝█████╗  ██████╔╝"
-echo " ██║       ╚██╔╝  ██╔══██╗██╔══╝  ██╔══██╗"
-echo " ╚██████╗   ██║   ██████╔╝███████╗██║  ██║"
-echo "  ╚═════╝   ╚═╝   ╚══════╝╚══════╝╚═╝  ╚═╝"
-echo "       T A C T I C A L   M I N T          "
-echo -e "${RESET}"
+usage() {
+  cat <<EOF
+Cyber-Tactical-Mint v$VERSION
 
-# --- COMPROBACIÓN DE PRIVILEGIOS ---
-if [ "$EUID" -ne 0 ]; then
-  echo -e "${NEON_ROJO}[!] ERROR: Este script requiere privilegios de Administrador (sudo).${RESET}"
-  exit 1
+Uso: ./scripts/install.sh [opciones]
+
+  -t, --theme NOMBRE     Paleta a usar: $(list_palettes | tr '\n' ' ')(por defecto: cyber)
+  -n, --dry-run          Muestra qué haría, sin cambiar nada
+      --with-extras      Instala también fzf, bat, zoxide y eza (si existen en tus repos)
+      --with-starship    Instala el prompt Starship desde starship.rs (opcional)
+      --with-system-theme  Aplica tema GTK, iconos y tema de Cinnamon a juego
+      --skip-deps        No instala paquetes con apt
+      --skip-fonts       No descarga la Nerd Font
+      --skip-wallpaper   No cambia el fondo de pantalla
+      --no-launch        No inicia/reinicia Conky ni Plank al terminar
+      --force            Continúa aunque la distribución no sea Mint/Ubuntu/Debian
+  -h, --help             Muestra esta ayuda
+
+Para deshacer todo:  ./scripts/uninstall.sh
+EOF
+}
+
+while (( $# )); do
+  case $1 in
+    -t|--theme)          THEME="${2:?Falta el nombre de la paleta}"; shift ;;
+    -n|--dry-run)        DRY_RUN=1 ;;
+    --with-extras)       WITH_EXTRAS=1 ;;
+    --with-starship)     WITH_STARSHIP=1 ;;
+    --with-system-theme) WITH_SYSTEM_THEME=1 ;;
+    --skip-deps)         SKIP_DEPS=1 ;;
+    --skip-fonts)        SKIP_FONTS=1 ;;
+    --skip-wallpaper)    SKIP_WALLPAPER=1 ;;
+    --no-launch)         NO_LAUNCH=1 ;;
+    --force)             FORCE=1 ;;
+    -h|--help)           usage; exit 0 ;;
+    *) usage >&2; die "Opción desconocida: $1" ;;
+  esac
+  shift
+done
+
+# ── Comprobaciones previas ───────────────────────────────────────────────────
+check_system() {
+  local id="" like=""
+  if [[ -r /etc/os-release ]]; then
+    id=$(. /etc/os-release; echo "${ID:-}")
+    like=$(. /etc/os-release; echo "${ID_LIKE:-}")
+  fi
+  case "$id $like" in
+    *linuxmint*|*ubuntu*|*debian*) ;;
+    *)
+      if (( FORCE || DRY_RUN )); then
+        warn "Distribución no reconocida (${id:-?}); sigo porque usaste --force/--dry-run."
+      else
+        die "Este instalador está pensado para Linux Mint/Ubuntu/Debian. Usa --force para continuar igualmente."
+      fi ;;
+  esac
+  [[ ${XDG_CURRENT_DESKTOP:-} == *Cinnamon* ]] \
+    || warn "No detecto una sesión Cinnamon; los ajustes de escritorio podrían no aplicarse."
+}
+
+if [[ $EUID -eq 0 && -z ${CTM_ALLOW_ROOT:-} ]]; then
+  die "No ejecutes este script con sudo. Las configuraciones son de tu usuario; el script pedirá sudo solo para apt. (Contenedores/CI: CTM_ALLOW_ROOT=1)"
 fi
 
-# ==============================================================================
-# [BLOQUE B] DETECCIÓN INTELIGENTE DE HARDWARE Y RED
-# ==============================================================================
-echo -e "${NEON_CYAN}[*] Analizando la arquitectura de tu hardware...${RESET}"
+printf '\n%s⚡ CYBER-TACTICAL MINT v%s ⚡%s\n' "$C_GRN" "$VERSION" "$C_RST"
+(( DRY_RUN )) && warn "Modo --dry-run: no se modificará nada."
 
-GPU_CHECK=$(lspci | grep -E "VGA|3D" | grep -i -E "nvidia|intel|amd|radeon")
-NET_CHECK=$(ip -o -4 route show to default | awk '{print $5}' | head -n1)
+check_system
+load_palette "$THEME"
+info "Paleta: ${P_NAME} — ${P_DESC}"
 
-HAS_NVIDIA=false
-if [[ $GPU_CHECK =~ "NVIDIA" ]]; then
-    HAS_NVIDIA=true
-    echo -e "${NEON_VERDE}    -> GPU Detectada: NVIDIA${RESET}"
+# ── Paquetes ─────────────────────────────────────────────────────────────────
+pkg_candidate() { apt-cache policy "$1" 2>/dev/null | awk '/Candidate:/ {print $2}'; }
+pkg_installed() { dpkg -s "$1" >/dev/null 2>&1; }
+
+install_deps() {
+  step "Dependencias"
+  if ! have apt-get; then
+    warn "No hay apt-get; instala a mano: conky kitty btop plank fastfetch."
+    return 0
+  fi
+  local want=(conky-all kitty btop plank fastfetch dconf-cli fontconfig curl unzip)
+  (( WITH_EXTRAS )) && want+=(fzf bat zoxide eza)
+
+  local sudo_cmd=()
+  have sudo && sudo_cmd=(sudo)
+  run "${sudo_cmd[@]}" apt-get update -qq
+
+  local to_install=() missing=() p cand
+  for p in "${want[@]}"; do
+    pkg_installed "$p" && continue
+    cand=$(pkg_candidate "$p")
+    if [[ -n $cand && $cand != "(none)" ]]; then to_install+=("$p"); else missing+=("$p"); fi
+  done
+
+  if (( ${#to_install[@]} )); then
+    info "Instalando: ${to_install[*]}"
+    run "${sudo_cmd[@]}" apt-get install -y "${to_install[@]}"
+  else
+    ok "Todas las dependencias ya están instaladas."
+  fi
+  if (( ${#missing[@]} )); then
+    warn "No disponibles en tus repositorios: ${missing[*]}"
+    [[ " ${missing[*]} " == *" fastfetch "* ]] \
+      && warn "  fastfetch: descarga el .deb desde https://github.com/fastfetch-cli/fastfetch/releases"
+  fi
+}
+
+install_fonts() {
+  step "Tipografía (JetBrainsMono Nerd Font)"
+  if have fc-list && fc-list | grep -qi "JetBrainsMono Nerd Font"; then
+    ok "Ya instalada."; return 0
+  fi
+  if (( SKIP_FONTS )); then warn "Omitida (--skip-fonts)."; return 0; fi
+  if (( DRY_RUN )); then
+    info "descargaría JetBrainsMono.zip de nerd-fonts a ~/.local/share/fonts/CyberTacticalMint"
+    return 0
+  fi
+  local tmp url="https://github.com/ryanoasis/nerd-fonts/releases/latest/download/JetBrainsMono.zip"
+  tmp=$(mktemp -d)
+  if curl -fsSL --retry 3 -o "$tmp/font.zip" "$url" && unzip -qo "$tmp/font.zip" '*.ttf' -d "$tmp/ttf"; then
+    mkdir -p "$HOME/.local/share/fonts/CyberTacticalMint"
+    cp "$tmp"/ttf/*.ttf "$HOME/.local/share/fonts/CyberTacticalMint/"
+    fc-cache -f >/dev/null 2>&1 || true
+    ok "Fuente instalada."
+  else
+    warn "No pude descargar la fuente. Se usará una fuente monoespaciada del sistema."
+  fi
+  rm -rf "$tmp"
+}
+
+(( SKIP_DEPS )) || install_deps
+install_fonts
+
+# Fuente a usar en las plantillas
+FONT_MONO="JetBrainsMono Nerd Font"
+if (( SKIP_FONTS )) && have fc-list && ! fc-list | grep -qi "JetBrainsMono Nerd Font"; then
+  FONT_MONO="DejaVu Sans Mono"
+fi
+
+# ── Detección de hardware ────────────────────────────────────────────────────
+step "Detección de hardware"
+NET_IFACE="$(detect_net_iface)"
+info "Interfaz de red activa: $NET_IFACE"
+
+BATTERY=""
+BATTERY="$(detect_battery || true)"
+
+sed_blk() { sed "${SED_ARGS[@]}" "$ROOT_DIR/configs/conky/blocks/$1"; }
+tpl_set FONT_MONO "$FONT_MONO"
+tpl_set NET_IFACE "$NET_IFACE"
+tpl_set BATTERY "${BATTERY:-BAT0}"
+tpl_set CTM_HOME "$ROOT_DIR"
+tpl_set THEME_NAME "$P_NAME"
+tpl_set HOME_DIR "$HOME"
+tpl_set CONKY_DIR "${XDG_CONFIG_HOME:-$HOME/.config}/conky/cyber-tactical"
+tpl_set CONKY_CONF "${XDG_CONFIG_HOME:-$HOME/.config}/conky/cyber-tactical/conky.conf"
+
+if has_nvidia; then
+  info "GPU NVIDIA detectada: se añade su bloque al HUD."
+  BLOCKS[GPU_BLOCK]="$(sed_blk gpu.txt)"
 else
-    echo -e "${NEON_AMARILLO}    -> GPU Detectada: Intel/AMD (Se omitirá nvidia-smi)${RESET}"
+  info "Sin NVIDIA (o sin nvidia-smi): HUD sin bloque de GPU."
+  BLOCKS[GPU_BLOCK]=""
 fi
-echo -e "${NEON_VERDE}    -> Interfaz de red activa: $NET_CHECK${RESET}\n"
+if [[ -n $BATTERY ]]; then
+  info "Batería detectada ($BATTERY): se añade al HUD."
+  BLOCKS[BATT_BLOCK]="$(sed_blk battery.txt)"
+else
+  BLOCKS[BATT_BLOCK]=""
+fi
 
-# ==============================================================================
-# [BLOQUE A] MENÚ INTERACTIVO MODULAR
-# ==============================================================================
-echo -e "${NEON_AMARILLO}Selecciona los componentes tácticos que deseas desplegar:${RESET}"
-echo -e " 1) ${NEON_CYAN}Instalación Completa${RESET} (Kitty, Conky, Plank, Picom, btop, Fastfetch)"
-echo -e " 2) ${NEON_CYAN}Suite de Escritorio${RESET}  (Solo Conky HUD, Fuentes y Dock Plank)"
-echo -e " 3) ${NEON_CYAN}Suite de Terminal${RESET}    (Solo Kitty Terminal, btop, Fastfetch)"
-echo -e " 4) ${NEON_ROJO}Cancelar e Interrumpir${RESET}"
-echo ""
-read -p "Introduce el número de tu opción [1-4]: " OPCION
+# ── Configuraciones ──────────────────────────────────────────────────────────
+step "Instalando configuraciones"
+ensure_state
+(( DRY_RUN )) || printf '%s\n' "$P_NAME" > "$STATE_DIR/theme"
 
-# --- FUNCIONES DE INSTALACIÓN ---
-instalar_base() {
-    echo -e "\n${NEON_CYAN}[*] Actualizando repositorios e instalando Arsenal de Pentesting...${RESET}"
-    apt update
-    
-    # 1. Dependencias base del sistema
-    apt install -y git wget curl unzip lm-sensors build-essential
-    
-    # 2. Herramientas de Pentesting, Auditoría de Redes y Explotación
-    echo -e "${NEON_VERDE}    -> Desplegando herramientas de Redes, Cracking y Web...${RESET}"
-    apt install -y \
-        nmap \
-        tcpdump \
-        wireshark-cli \
-        nload \
-        net-tools \
-        macchanger \
-        john \
-        hashcat \
-        hydra \
-        aircrack-ng \
-        crunch \
-        sqlmap \
-        nikto \
-        gobuster \
-        dirb \
-        subfinder \
-        whois \
-        dnsutils
+CFG="${XDG_CONFIG_HOME:-$HOME/.config}"
+DATA="${XDG_DATA_HOME:-$HOME/.local/share}"
 
-    # 3. Instalación automatizada opcional del Framework Metasploit si no existe
-    if ! command -v msfconsole &> /dev/null; then
-        echo -e "${NEON_CYAN}    -> Descargando e instalando Metasploit Framework de forma segura...${RESET}"
-        curl https://githubusercontent.com | qbus -s /bin/bash
-    fi
+# Conky
+install_rendered "$ROOT_DIR/configs/conky/conky.conf.tpl" "$CFG/conky/cyber-tactical/conky.conf"
+install_plain    "$ROOT_DIR/scripts/helpers/cpu-temp.sh"  "$CFG/conky/cyber-tactical/cpu-temp.sh" 755
+ok "Conky HUD"
 
-    # Configurar permisos para capturas de red sin sudo para el usuario luis18
-    sudo usermod -aG wireshark luis18 2>/dev/null
-    sudo chmod +x /usr/bin/dumpcap 2>/dev/null
+# Kitty
+install_rendered "$ROOT_DIR/configs/kitty/kitty.conf.tpl" "$CFG/kitty/kitty.conf"
+ok "Kitty"
+
+# Btop
+install_rendered "$ROOT_DIR/configs/btop/cyber-tactical.theme.tpl" "$CFG/btop/themes/cyber-tactical.theme"
+configure_btop() {
+  local conf="$CFG/btop/btop.conf"
+  if [[ -f $conf ]]; then
+    if (( DRY_RUN )); then info "ajustaría color_theme en $conf"; return 0; fi
+    backup_file "$conf"
+    for kv in 'color_theme|"cyber-tactical"' 'theme_background|False' 'truecolor|True'; do
+      key=${kv%%|*}; val=${kv#*|}
+      if grep -q "^${key}[ =]" "$conf"; then
+        sed -i "s|^${key}[ =].*|${key} = ${val}|" "$conf"
+      else
+        printf '%s = %s\n' "$key" "$val" >> "$conf"
+      fi
+    done
+    manifest_add "$conf"
+  else
+    install_rendered "$ROOT_DIR/configs/btop/btop.conf.tpl" "$conf"
+  fi
 }
+configure_btop
+ok "Btop"
 
-instalar_terminal_suite() {
-    echo -e "\n${NEON_VERDE}[+] Desplegando Suite de Terminal...${RESET}"
-    apt install -y kitty btop fastfetch
+# Fastfetch
+install_rendered "$ROOT_DIR/configs/fastfetch/config.jsonc.tpl" "$CFG/fastfetch/config.jsonc"
+ok "Fastfetch"
 
-    REAL_USER=${SUDO_USER:-$USER}
-    USER_HOME=$(eval echo ~$REAL_USER)
-    
-    # Configuración de Kitty
-    mkdir -p "$USER_HOME/.config/kitty"
-    if [ -f "../configs/kitty/kitty.conf" ]; then
-        cp "../configs/kitty/kitty.conf" "$USER_HOME/.config/kitty/"
-        chown -R "$REAL_USER":"$REAL_USER" "$USER_HOME/.config/kitty"
+# Plank
+install_rendered "$ROOT_DIR/configs/plank/dock.theme.tpl" "$DATA/plank/themes/CyberTactical/dock.theme"
+PLANK_DOCK="/net/launchpad/plank/docks/dock1"
+dconf_set "$PLANK_DOCK/theme"        "'CyberTactical'"
+dconf_set "$PLANK_DOCK/icon-size"    "44"
+dconf_set "$PLANK_DOCK/hide-mode"    "'window-dodge'"
+dconf_set "$PLANK_DOCK/zoom-enabled" "true"
+dconf_set "$PLANK_DOCK/zoom-percent" "130"
+ok "Plank"
+
+# Starship (opcional)
+if (( WITH_STARSHIP )) && ! have starship; then
+  step "Starship"
+  if (( DRY_RUN )); then
+    info "ejecutaría el instalador oficial de https://starship.rs en ~/.local/bin"
+  else
+    mkdir -p "$HOME/.local/bin"
+    curl -fsSL https://starship.rs/install.sh | sh -s -- -y -b "$HOME/.local/bin" \
+      || warn "No se pudo instalar Starship; se usará el prompt integrado."
+  fi
+fi
+if have starship || [[ -x $HOME/.local/bin/starship ]] || (( WITH_STARSHIP && DRY_RUN )); then
+  install_rendered "$ROOT_DIR/configs/shell/starship.toml.tpl" "$CFG/starship.toml"
+  ok "Starship (configuración)"
+fi
+
+# Shell (alias, prompt, atajos)
+install_rendered "$ROOT_DIR/configs/shell/shell.sh.tpl" "$CFG/cyber-tactical-mint/shell.sh"
+bashrc_enable "$CFG/cyber-tactical-mint/shell.sh"
+ok "Shell (alias y prompt) — se activa al abrir una terminal nueva"
+
+# Autostart
+AUTOSTART="$CFG/autostart"
+install_rendered "$ROOT_DIR/configs/autostart/conky.desktop.tpl" "$AUTOSTART/cyber-tactical-conky.desktop"
+install_rendered "$ROOT_DIR/configs/autostart/plank.desktop.tpl" "$AUTOSTART/cyber-tactical-plank.desktop"
+ok "Inicio automático de Conky y Plank"
+
+# ── Fondos y ajustes de escritorio ───────────────────────────────────────────
+step "Escritorio"
+BG_DIR="$DATA/backgrounds/cyber-tactical-mint"
+for wp in "$ROOT_DIR"/wallpapers/*.jpg; do
+  [[ -e $wp ]] || continue
+  install_plain "$wp" "$BG_DIR/$(basename "$wp")"
+done
+if (( ! SKIP_WALLPAPER )) && [[ -f $ROOT_DIR/wallpapers/$P_NAME.jpg ]]; then
+  gs_set org.cinnamon.desktop.background picture-uri "'file://$BG_DIR/$P_NAME.jpg'"
+  gs_set org.cinnamon.desktop.background picture-options "'zoom'"
+  ok "Fondo de pantalla: $P_NAME"
+fi
+
+# Kitty como terminal predeterminada (Ctrl+Alt+T)
+gs_set org.cinnamon.desktop.default-applications.terminal exec "'kitty'"
+gs_set org.cinnamon.desktop.default-applications.terminal exec-arg "''"
+ok "Kitty como terminal predeterminada"
+
+if (( WITH_SYSTEM_THEME )); then
+  if [[ -d /usr/share/themes/$P_GTK_THEME ]]; then
+    gs_set org.cinnamon.desktop.interface gtk-theme "'$P_GTK_THEME'"
+    gs_set org.cinnamon.theme name "'$P_GTK_THEME'"
+    ok "Tema GTK/Cinnamon: $P_GTK_THEME"
+  else
+    warn "El tema '$P_GTK_THEME' no está instalado; se omite."
+  fi
+  if [[ -d /usr/share/icons/$P_ICON_THEME ]]; then
+    gs_set org.cinnamon.desktop.interface icon-theme "'$P_ICON_THEME'"
+    ok "Iconos: $P_ICON_THEME"
+  else
+    warn "Los iconos '$P_ICON_THEME' no están instalados; se omiten."
+  fi
+fi
+
+# ── Arranque inmediato ───────────────────────────────────────────────────────
+if (( ! NO_LAUNCH )) && [[ -n ${DISPLAY:-} ]]; then
+  step "Aplicando cambios"
+  if have conky; then
+    run pkill -x conky || true
+    if (( ! DRY_RUN )); then
+      sleep 1
+      setsid conky -c "$CFG/conky/cyber-tactical/conky.conf" >/dev/null 2>&1 &
     fi
-
-    # [NUEVO] Configuración del tema de btop
-    mkdir -p "$USER_HOME/.config/btop/themes"
-    if [ -f "../configs/btop/cyber-tactical.theme" ]; then
-        cp "../configs/btop/cyber-tactical.theme" "$USER_HOME/.config/btop/themes/"
-        # Forzar a btop a usar nuestro tema modificando su config si existe
-        mkdir -p "$USER_HOME/.config/btop"
-        echo 'color_theme="cyber-tactical.theme"' > "$USER_HOME/.config/btop/btop.conf"
-        chown -R "$REAL_USER":"$REAL_USER" "$USER_HOME/.config/btop"
-        echo -e "${NEON_VERDE}    -> Tema táctico aplicado correctamente a btop.${RESET}"
+    ok "Conky iniciado"
+  fi
+  if have plank; then
+    run pkill -x plank || true
+    if (( ! DRY_RUN )); then
+      sleep 1
+      setsid plank >/dev/null 2>&1 &
     fi
-}
+    ok "Plank iniciado"
+  fi
+fi
 
+printf '\n%s✔ Listo.%s Paleta activa: %s%s%s\n' "$C_GRN" "$C_RST" "$C_CYN" "$P_NAME" "$C_RST"
+cat <<EOF
 
-instalar_desktop_suite() {
-    echo -e "\n${NEON_VERDE}[+] Desplegando Suite de Escritorio...${RESET}"
-    apt install -y conky-all plank picom
-    
-    # Parcheo en caliente del archivo del autor para corregir errores de hardware
-    CONKY_CONF="../configs/conky/cyberpunk-conky.conf" 
-    if [ -f "$CONKY_CONF" ]; then
-        sed -i "s/wlan0/$NET_CHECK/g" "$CONKY_CONF"
-        sed -i "s/eth0/$NET_CHECK/g" "$CONKY_CONF"
-        if [ "$HAS_NVIDIA" = false ]; then
-            sed -i '/nvidia-smi/s/^/# /' "$CONKY_CONF"
-        fi
-    fi
-}
+  • Abre una terminal nueva (Ctrl+Alt+T) para ver Kitty y el prompt.
+  • Cambiar de paleta:   ./scripts/set-theme.sh <cyber|military|amber>
+  • Deshacer todo:       ./scripts/uninstall.sh
+  • Si falta algo:       docs/TROUBLESHOOTING.md
 
-# ==============================================================================
-# [BLOQUE C] DESPLIEGUE DE CONFIGURACIONES, FUENTES E INICIO AUTOMÁTICO
-# ==============================================================================
-desplegar_recursos_usuario() {
-    # Forzar la ruta correcta para tu usuario local luis18
-    REAL_USER="luis18"
-    USER_HOME="/home/luis18"
-
-    echo -e "\n${NEON_CYAN}[*] Desplegando archivos de configuración para el usuario: $REAL_USER...${RESET}"
-
-    # Crear directorios del usuario de forma segura
-    mkdir -p "$USER_HOME/.config/conky"
-    mkdir -p "$USER_HOME/.config/autostart"
-    mkdir -p "$USER_HOME/.local/share/fonts"
-
-    # Copiar archivos de configuración de Conky
-    if [ -f "../configs/conky/cyberpunk-conky.conf" ]; then
-        cp "../configs/conky/cyberpunk-conky.conf" "$USER_HOME/.config/conky/"
-        echo -e "${NEON_VERDE}    -> Configuración de Conky copiada correctamente.${RESET}"
-    fi
-
-    # Instalar fuentes tipográficas
-    if [ -d "../configs/fonts" ] && [ "$(ls -A ../configs/fonts 2>/dev/null)" ]; then
-        cp ../configs/fonts/*.{ttf,otf} "$USER_HOME/.local/share/fonts/" 2>/dev/null
-        sudo -u "$REAL_USER" fc-cache -fv > /dev/null
-        echo -e "${NEON_VERDE}    -> Fuentes tácticas instaladas en el sistema.${RESET}"
-    fi
-
-    # Crear lanzadores de inicio automático (.desktop)
-    cat <<EOF > "$USER_HOME/.config/autostart/conky-tactical.desktop"
-[Desktop Entry]
-Type=Application
-Exec=sh -c "sleep 5 && conky -c $USER_HOME/.config/conky/cyberpunk-conky.conf"
-Hidden=false
-NoDisplay=false
-X-GNOME-Autostart-enabled=true
-Name=Conky Cyber-Tactical
-Comment=Inicia el monitor HUD táctico al encender el sistema
 EOF
-
-    cat <<EOF > "$USER_HOME/.config/autostart/plank-tactical.desktop"
-[Desktop Entry]
-Type=Application
-Exec=plank
-Hidden=false
-NoDisplay=false
-X-GNOME-Autostart-enabled=true
-Name=Plank Dock
-Comment=Inicia la barra de aplicaciones táctica
-EOF
-
-    # Configurar e instalar el Fondo de Pantalla Táctico
-    mkdir -p "$USER_HOME/Imágenes/Wallpapers"
-    WALLPAPER_FILE=$(ls ../wallpapers/cyber-wallpaper.* 2>/dev/null | head -n 1)
-
-    if [ -f "$WALLPAPER_FILE" ]; then
-        EXTENSION="${WALLPAPER_FILE##*.}"
-        cp "$WALLPAPER_FILE" "$USER_HOME/Imágenes/Wallpapers/cyber-tactical.$EXTENSION"
-        chown "$REAL_USER":"$REAL_USER" "$USER_HOME/Imágenes/Wallpapers/cyber-tactical.$EXTENSION"
-        
-        # Cambiar el fondo en Linux Mint Cinnamon
-        sudo -u "$REAL_USER" gsettings set org.cinnamon.desktop.background picture-uri "file://$USER_HOME/Imágenes/Wallpapers/cyber-tactical.$EXTENSION"
-        echo -e "${NEON_VERDE}    -> Fondo de pantalla del celular establecido con éxito.${RESET}"
-    fi
-
-    # Corregir los permisos de propietario para que le pertenezcan a tu usuario
-    chown -R "$REAL_USER":"$REAL_USER" "$USER_HOME/.config/conky"
-    chown -R "$REAL_USER":"$REAL_USER" "$USER_HOME/.config/autostart"
-    chown -R "$REAL_USER":"$REAL_USER" "$USER_HOME/.local/share/fonts"
-    chown -R "$REAL_USER":"$REAL_USER" "$USER_HOME/Imágenes/Wallpapers"
-}
-
-# --- EVALUACIÓN DE MENÚ ---
-case $OPCION in
-    1)
-        instalar_base
-        instalar_terminal_suite
-        instalar_desktop_suite
-        desplegar_recursos_usuario
-        ;;
-    2)
-        instalar_base
-        instalar_desktop_suite
-        desplegar_recursos_usuario
-        ;;
-    3)
-        instalar_base
-        instalar_terminal_suite
-        desplegar_recursos_usuario
-        ;;
-    4|*)
-        echo -e "\n${NEON_ROJO}[!] Operación cancelada por el usuario.${RESET}\n"
-        exit 0
-        ;;
-esac
-
-echo -e "\n${NEON_VERDE}=== Sistema Cyber-Tactical-Mint Desplegado Correctamente ===${RESET}"
-echo -e "${NEON_AMARILLO}[i] Te recomendamos reiniciar el sistema para aplicar la personalización.${RESET}\n"

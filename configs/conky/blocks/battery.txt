@@ -1,0 +1,3 @@
+${voffset 4}
+${color3}▸ BATERÍA${color}${alignr}${color2}${battery_percent @@BATTERY@@}%${color}
+${color1}${battery_bar 6,300 @@BATTERY@@}${color}

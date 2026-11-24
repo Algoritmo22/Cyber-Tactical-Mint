@@ -1,0 +1,15 @@
+# Paleta CYBER: negro azulado + verde neón / cian / magenta
+# Los colores van SIN el símbolo "#". Cada plantilla lo añade cuando hace falta.
+P_NAME="cyber"
+P_DESC="Cyberpunk neón (verde, cian, magenta)"
+P_BG="0a0e14"
+P_BG_ALT="121a24"
+P_FG="c5d1de"
+P_PRIMARY="00ff9c"
+P_SECONDARY="00e5ff"
+P_ACCENT="ff2e88"
+P_WARN="ffb300"
+P_DANGER="ff3b3b"
+P_MUTED="5c6b7a"
+P_GTK_THEME="Mint-Y-Dark-Aqua"
+P_ICON_THEME="Mint-Y-Aqua"

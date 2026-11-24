@@ -1,0 +1,3 @@
+${voffset 4}
+${color3}▸ GPU${color}${alignr}${color2}${execi 2 nvidia-smi --query-gpu=utilization.gpu --format=csv,noheader,nounits}%${color}  ${color5}${execi 5 nvidia-smi --query-gpu=temperature.gpu --format=csv,noheader}°C${color}
+${color4}VRAM ${color}${execi 5 nvidia-smi --query-gpu=memory.used,memory.total --format=csv,noheader}

@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Changelog
 
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
@@ -27,3 +28,6 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 
 ## [1.x]
 - Versión inicial: Conky, Kitty, Btop, Fastfetch y Plank con instalador básico.
+=======
+- Añadido bloque de almacenamiento total (suma de todos los discos locales) al HUD de Conky.
+>>>>>>> 9682ba4 (feat(conky): mostrar almacenamiento total, usado y libre)
